@@ -155,7 +155,7 @@ def mock_load_dotenv() -> Generator[MagicMock]:
     Yields:
         Mock object for load_dotenv function.
     """
-    with patch("agent_engine_cicd_base.deployment.config.load_dotenv") as mock:
+    with patch("agent_bq.deployment.config.load_dotenv") as mock:
         yield mock
 
 

@@ -1,5 +1,5 @@
 [project]
-name = "agent-engine-cicd-base"
+name = "agent-bq"
 version = "0.6.0"
 description = "Base repo for deploying ADK apps to Agent Engine"
 readme = "README.md"
@@ -25,17 +25,17 @@ dependencies = [
 ]
 
 [project.scripts]
-deploy = "agent_engine_cicd_base.deployment.deploy_agent:deploy"
-delete = "agent_engine_cicd_base.deployment.deploy_agent:delete"
-register = "agent_engine_cicd_base.deployment.register_agent:main_register"
-unregister = "agent_engine_cicd_base.deployment.register_agent:main_unregister"
-list-agents = "agent_engine_cicd_base.deployment.register_agent:main_list"
-local-agent = "agent_engine_cicd_base.server:main"
-server = "agent_engine_cicd_base.server:main"
-remote-agent = "agent_engine_cicd_base.deployment.run_remote_agent:main"
-test-deploy = "agent_engine_cicd_base.deployment.deploy_agent:test_environment"
-test-register = "agent_engine_cicd_base.deployment.register_agent:test_environment"
-init-template = "agent_engine_cicd_base.deployment.init_template:main"
+deploy = "agent_bq.deployment.deploy_agent:deploy"
+delete = "agent_bq.deployment.deploy_agent:delete"
+register = "agent_bq.deployment.register_agent:main_register"
+unregister = "agent_bq.deployment.register_agent:main_unregister"
+list-agents = "agent_bq.deployment.register_agent:main_list"
+local-agent = "agent_bq.server:main"
+server = "agent_bq.server:main"
+remote-agent = "agent_bq.deployment.run_remote_agent:main"
+test-deploy = "agent_bq.deployment.deploy_agent:test_environment"
+test-register = "agent_bq.deployment.register_agent:test_environment"
+init-template = "agent_bq.deployment.init_template:main"
 
 [dependency-groups]
 dev = [
@@ -52,8 +52,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/agent_engine_cicd_base"]
-exclude = ["src/agent_engine_cicd_base/deployment"]
+packages = ["src/agent_bq"]
+exclude = ["src/agent_bq/deployment"]
 
 [tool.ruff]
 src = ["src"]
@@ -88,7 +88,7 @@ select = [
 [tool.mypy]
 python_version = "3.13"
 mypy_path = "src"
-packages = ["agent_engine_cicd_base"]
+packages = ["agent_bq"]
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -105,18 +105,18 @@ show_error_codes = true
 
 # Deployment modules use evolving Google Cloud APIs with version compatibility issues
 [[tool.mypy.overrides]]
-module = "agent_engine_cicd_base.deployment.*"
+module = "agent_bq.deployment.*"
 disable_error_code = ["attr-defined", "arg-type", "import-untyped"]
 
 # OpenTelemetry modules have limited type stubs
 [[tool.mypy.overrides]]
-module = "agent_engine_cicd_base.utils.observability"
+module = "agent_bq.utils.observability"
 disable_error_code = ["import-untyped"]
 
 [tool.coverage.run]
 branch = true
 include = [
-    "src/agent_engine_cicd_base/deployment/config.py",
+    "src/agent_bq/deployment/config.py",
 ]
 
 [tool.coverage.report]

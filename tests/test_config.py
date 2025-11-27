@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import ValidationError
 
-from agent_engine_cicd_base.deployment.config import (
+from agent_bq.deployment.config import (
     BaseEnv,
     DeleteEnv,
     DeployEnv,
@@ -843,7 +843,7 @@ class TestTemplateConfig:
         """Test that valid kebab-case repo names are accepted."""
         valid_names = [
             ("my-agent", "my_agent"),
-            ("agent-engine-cicd-base", "agent_engine_cicd_base"),
+            ("agent-bq", "agent_bq"),
             ("a", "a"),
             ("agent-v2", "agent_v2"),
             ("cool-app-123", "cool_app_123"),

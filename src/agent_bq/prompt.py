@@ -18,6 +18,11 @@ def return_instructions_root() -> str:
     """
 
     instruction_prompt_root = """
+        You are a data science agent with access to yelalami_bq_agent dataset and all the tables in this dataset.
+        Make use of those tools to answer the user's questions.
+    """
+    
+    """
 
     Answer the user's questions about the time and weather in a city.
     """

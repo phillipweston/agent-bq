@@ -1,4 +1,4 @@
-# agent-engine-cicd-base
+# agent-bq
 Base repo for deploying ADK apps to Agent Engine
 
 ## Overview
