@@ -492,24 +492,27 @@ async def create_authorization() -> None:
     )
 
     # Get optional OAuth parameters
-    oauth_scopes = os.getenv("OAUTH_SCOPES", "")
+    oauth_scopes = os.getenv("OAUTH_SCOPES", "openid email profile")  # Default scopes for Google OAuth
     oauth_audience = os.getenv("OAUTH_AUDIENCE", "")
-    oauth_prompt = os.getenv("OAUTH_PROMPT", "")
+    oauth_prompt = os.getenv("OAUTH_PROMPT", "consent")  # Default to consent for refresh tokens
 
-    # Build authorization URL with optional parameters
-    params = {
-        "response_type": "code",
-    }
+    # Build authorization URL with parameters
+    # Note: Agentspace will add client_id, redirect_uri, state, and response_type automatically
+    params = {}
+    
+    # Scope is REQUIRED for OAuth to work
+    params["scope"] = oauth_scopes
     
     if oauth_audience:
         params["audience"] = oauth_audience
     if oauth_prompt:
         params["prompt"] = oauth_prompt
-    if oauth_scopes:
-        params["scope"] = oauth_scopes
 
     # Construct URL with encoded parameters
-    auth_url = f"{oauth_auth_uri}?{urlencode(params)}" if params else oauth_auth_uri
+    auth_url = f"{oauth_auth_uri}?{urlencode(params)}"
+    
+    print(f"ℹ️  OAuth Scopes: {oauth_scopes}")
+    print(f"ℹ️  OAuth Prompt: {oauth_prompt}")
 
     payload = {
         "name": f"projects/{PROJECT}/locations/{auth_location}/authorizations/{auth_id}",
@@ -630,6 +633,71 @@ async def list_agent_registrations() -> None:
     return
 
 
+async def list_authorizations() -> None:
+    """List all authorization resources in the project.
+    
+    This helps verify which OAuth authorizations have been created.
+    """
+    headers: dict[str, str] = setup_environment()
+    
+    # Authorization resources are typically at 'global' location
+    auth_location = os.getenv("AUTH_LOCATION", "global")
+    
+    print(f"ℹ️  Listing authorizations in location: {auth_location}\n")
+    
+    # Construct the authorization list endpoint
+    location_prefix = "" if auth_location == "global" else f"{auth_location}-"
+    auth_list_endpoint = (
+        f"https://{location_prefix}discoveryengine.googleapis.com/{API_VERSION}/"
+        f"projects/{PROJECT}/locations/{auth_location}/authorizations"
+    )
+    
+    print(f"📍 Endpoint: {auth_list_endpoint}\n")
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                auth_list_endpoint, headers=headers, timeout=30.0
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            print("📡 Raw response:\n")
+            print(json.dumps(data, indent=2))
+            
+            authorizations = data.get("authorizations", [])
+            
+            if not authorizations:
+                print(f"\n📭 No authorizations found in location '{auth_location}'")
+                return
+            
+            print(f"\n🔐 Authorizations in project '{PROJECT}':\n")
+            for auth in authorizations:
+                auth_name = auth.get("name", "")
+                auth_id = auth_name.split("/")[-1] if auth_name else "unknown"
+                oauth_config = auth.get("serverSideOauth2", {})
+                client_id = oauth_config.get("clientId", "N/A")
+                auth_uri = oauth_config.get("authorizationUri", "N/A")
+                
+                print(f"- Authorization ID: {auth_id}")
+                print(f"  Full Name:        {auth_name}")
+                print(f"  Client ID:        {client_id}")
+                print(f"  Auth URI:         {auth_uri}\n")
+                
+    except httpx.HTTPStatusError as err:
+        print(f"❌ 🌐 HTTP error occurred: {err}")
+        print(f"Response content: {err.response.text}")
+        if err.response.status_code == 404:
+            print(f"\n💡 Tip: Authorization resources might not exist in location '{auth_location}'")
+            print("   Try setting AUTH_LOCATION=global if using a different location")
+        exit(1)
+    except httpx.RequestError as err:
+        print(f"❌ ⚠️ Error during list operation: {err}")
+        exit(1)
+    
+    return
+
+
 # Sync wrapper functions for backwards compatibility and CLI usage
 def main_register() -> None:
     """Synchronous wrapper for the async register function."""
@@ -644,6 +712,11 @@ def main_unregister() -> None:
 def main_list() -> None:
     """Synchronous wrapper for the async list_agent_registrations function."""
     asyncio.run(list_agent_registrations())
+
+
+def main_list_auth() -> None:
+    """Synchronous wrapper for the async list_authorizations function."""
+    asyncio.run(list_authorizations())
 
 
 def main_create_authorization() -> None:
@@ -667,11 +740,13 @@ if __name__ == "__main__":
             main_unregister()
         elif command == "list":
             main_list()
+        elif command == "list-auth":
+            main_list_auth()
         elif command == "create-auth":
             main_create_authorization()
         elif command == "delete-auth":
             main_delete_authorization()
         else:
-            print("Usage: python bigquery_agent_register.py [register|unregister|list|create-auth|delete-auth]")
+            print("Usage: python bigquery_agent_register.py [register|unregister|list|list-auth|create-auth|delete-auth]")
     else:
-        print("Usage: python bigquery_agent_register.py [register|unregister|list|create-auth|delete-auth]")
+        print("Usage: python bigquery_agent_register.py [register|unregister|list|list-auth|create-auth|delete-auth]")
