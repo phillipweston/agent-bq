@@ -243,15 +243,27 @@ async def register_authorization(env: RegisterEnv, headers: dict[str, str]) -> N
     print(f"📦 Auth Payload Configured with URI: {full_auth_uri}")
 
     # 5. Send Request
-    specific_auth_url = f"{base_app_url}/authorizations/{auth_id}?allowMissing=true"
+    specific_auth_url = f"{base_app_url}/authorizations/{auth_id}"
+
+    # This tells Google exactly which fields to overwrite.
+    # Without this, Google often ignores the change to the URL.
+    query_params = {
+        "allowMissing": "true",
+        "updateMask": "serverSideOauth2.authorizationUri,serverSideOauth2.clientId,serverSideOauth2.clientSecret,serverSideOauth2.tokenUri,serverSideOauth2.pkceEnabled"
+    }
 
     try:
         async with httpx.AsyncClient() as client:
             response = await client.patch(
-                specific_auth_url, headers=headers, json=payload, timeout=30.0
+                specific_auth_url, 
+                headers=headers, 
+                json=payload, 
+                params=query_params,  # <--- THIS IS WHERE YOU ADD IT
+                timeout=30.0
             )
             response.raise_for_status()
             print("✅ Authorization configuration updated successfully!")
+            print(f"Server response: {response.json()}") # Helpful for debugging
             
     except httpx.HTTPStatusError as err:
         print(f"❌ OAuth Configuration Failed: {err}")
