@@ -495,16 +495,22 @@ async def create_authorization() -> None:
     oauth_scopes = os.getenv("OAUTH_SCOPES", "openid email profile")  # Default scopes for Google OAuth
     oauth_audience = os.getenv("OAUTH_AUDIENCE", "")
     oauth_prompt = os.getenv("OAUTH_PROMPT", "consent")  # Default to consent for refresh tokens
+    oauth_access_type = os.getenv("OAUTH_ACCESS_TYPE", "offline")  # Default to offline for refresh tokens
 
-    # Build authorization URL with ALL required parameters
-    # Google OAuth requires: response_type, scope, and optionally prompt
+    # Build authorization URL with ALL required parameters for refresh tokens
+    # For Google OAuth to return a refresh token, we need:
+    # - response_type=code
+    # - scope (with required permissions)
+    # - access_type=offline (to get refresh token)
+    # - prompt=consent (to force consent screen and ensure refresh token)
     params = {
-        "response_type": "code",  # REQUIRED - tells OAuth to return an authorization code
-        "scope": oauth_scopes,    # REQUIRED - permissions being requested
+        "response_type": "code",      # REQUIRED - tells OAuth to return an authorization code
+        "scope": oauth_scopes,        # REQUIRED - permissions being requested
+        "access_type": oauth_access_type,  # REQUIRED for refresh token
     }
     
     if oauth_prompt:
-        params["prompt"] = oauth_prompt
+        params["prompt"] = oauth_prompt  # Force consent screen for refresh token
     
     if oauth_audience:
         params["audience"] = oauth_audience
@@ -514,6 +520,7 @@ async def create_authorization() -> None:
     
     print(f"ℹ️  OAuth Scopes: {oauth_scopes}")
     print(f"ℹ️  OAuth Prompt: {oauth_prompt}")
+    print(f"ℹ️  OAuth Access Type: {oauth_access_type}")
     print(f"ℹ️  Authorization URL: {auth_url}")
 
     payload = {
